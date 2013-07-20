@@ -121,7 +121,10 @@ with open(readCSVfile, 'r') as csvfile:
 			if row['LastName'] and row['FirstName']:			
 				for key in outlook_fields:
 					if key in sf_for_outlook_field:
-						contactRowValuesDict[sf_for_outlook_field[key]] = row[key]
+						if key in row:
+							sfkey = sf_for_outlook_field[key]							
+							contactRowValuesDict[sfkey] = row[key]
+#						contactRowValuesDict[sf_for_outlook_field[key]] = row[key]
 #						if "Company" in key:
 #							print(sf_for_outlook_field[key] + ": " + row[key])
 				
