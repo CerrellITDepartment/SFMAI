@@ -45,17 +45,21 @@ else:
 	dest_dir = working_dir
 	
 now = datetime.now()
-timestamp = now.strftime("%M%S")
+timestamp = now.strftime("%yy%mm%dd-%H%M%S")
 
-master_acct_file_name = timestamp + "Master Account.csv"
-master_acct_file = os.path.join(dest_dir, master_acct_file_name)
+master_acct_file = timestamp + "_Master_Account.csv"
+master_acct_file = os.path.join(dest_dir, master_acct_file)
 
-if not os.path.exists(master_acct_file):
-	master_file = open(master_acct_file, "wb+")
-	master_csv = csv.writer(master_file, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-	master_csv.writerow(account_fields)
-	master_file.close()
+master_contact_file = timestamp + "_Master_Contact.csv"
+master_contact_file = os.path.join(dest_dir, master_contact_file)
 
+def checkForMasterFileWithFields(file_name, fields):
+	if not os.path.exists(file_name):
+		file = open(file_name, "wb+")
+		csv = csv.writer(file, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+		csv.writerow(fields)
+		file.close()
+		
 def createNewAccountFileAtDestDir():
 	file_name = timestamp + "TEMP Account.csv"
 	file_name = os.path.join(dest_dir, file_name)
@@ -94,66 +98,71 @@ def rowWithAccountNameValue(row):
 	return accountRowValues
 	
 def writeMultipleRowValuesToFile(file, rows):
-	filecsv = open(file, "r+b")
+	filecsv = open(file, "ab")
 	fwriter = csv.writer(filecsv, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
 	print "Rows we are writing to file '" + file + "': " + str(len(rows))
 	fwriter.writerows(rows)
 	filecsv.close()
 
 def writeMultipleRowValuesToMasterFile(rows):
-	mastercsv = open(master_acct_file, "r+b")
+	mastercsv = open(master_acct_file, "ab")
 	mastercsv.seek(0,2)
 	mwriter = csv.writer(mastercsv, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
 	print "rows we think we have: " + str(len(rows))
 	mwriter.writerows(rows)
 	mastercsv.close()
 
+def processFileForMasterContactFile(file):
+	if not file:
+		return
+	if not os.path.exists(file):
+		print "ERROR: contact file '" + file + "' does not actually exist. It was just your imagination."
+		return
+	
+	contactRowValuesToInsert = []
+	with open(file, "rb") as filecsv:
+		freader = csv.DictReader(filecsv, delimiter=',', quotechar='\"')
+		
+		row_count = 0
+		for frow in freader:
+			with open(master_contact_file, "rb") as mastercsv:
 			
 def processFileForMasterAccountFile(file):
 	if not file:
 		return
 	if not os.path.exists(file):
-		print "ERROR: file '" + file + "' does not actually exist. It was just a dream."
+		print "ERROR: account file '" + file + "' does not actually exist. It was just a dream."
 		return
 	print "Reading from: " + file
 	
-	filecsv = open(file, "r")
-	freader = csv.DictReader(filecsv, delimiter=',', quotechar='\"')
-	
-	with open(master_acct_file, "r+b") as mastercsv:
-		mreader = csv.DictReader(mastercsv, delimiter=',', quotechar='\"') 
-		
-		accountRowValuesToInsert = []
 
+	accountRowValuesToInsert = []
+	with open(file, "rb") as filecsv:
+		freader = csv.DictReader(filecsv, delimiter=',', quotechar='\"')
+	
 		row_count = 0
 		for frow in freader:
-			for mrow in mreader:
-				if not accountRowsMatch(mrow,frow):
+			with open(master_acct_file, "rb") as mastercsv:
+				mreader = csv.DictReader(mastercsv, delimiter=',', quotechar='\"')
+				foundValue = False 
+				for mrow in mreader:
+					foundValue = accountRowsMatch(mrow,frow)
+				
+				if not foundValue:
 					accountRowValues = rowWithAccountNameValue(frow)
 					accountRowValuesToInsert.append(accountRowValues)
 					row_count = row_count + 1
-			mastercsv.seek(0)
-		
+			
 		print "rows we inserted: " + str(row_count)
-		 #go to end of file
-		mastercsv.close()
 		
-#	writeMultipleRowValuesToMasterFile(accountRowValuesToInsert)
-	writeMultipleRowValuesToFile(createNewAccountFileAtDestDir(), accountRowValuesToInsert)
-#		mastercsv = open(master_acct_file, "r+b")#
-#		mastercsv.seek(0,2)
-#		mwriter = csv.writer(mastercsv, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-#
-#		print "rows we think we have: " + str(len(accountRowValuesToInsert))
-#		holder = accountRowValuesToInsert
-#		accountRowValuesToInsert = []
-#		mwriter.writerows(holder)
-#		mastercsv.close()
-	filecsv.close()
+	writeMultipleRowValuesToMasterFile(accountRowValuesToInsert)
 	return	
+
+checkForMasterFileWithFields(master_contact_file, contact_fields)
+checkForMasterFileWithFields(master_acct_file, account_fields)
 		
-acct_dir_match = os.path.join(working_dir, contact_file_sig)
-cont_dir_match = os.path.join(working_dir, account_file_sig)
+acct_dir_match = os.path.join(working_dir, account_file_sig)
+cont_dir_match = os.path.join(working_dir, contact_file_sig)
 
 account_files = glob.glob(acct_dir_match) 
 print "Account Directory Matching: " + acct_dir_match 
@@ -166,3 +175,6 @@ print "----------"
 
 for file in account_files:
 	processFileForMasterAccountFile(file)
+	
+for file in contact_files:
+	processFileForMasterContactFile(file)
