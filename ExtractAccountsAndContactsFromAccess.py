@@ -117,11 +117,11 @@ with open(readCSVfile, 'r') as csvfile:
 	clientAccounts = 0
 	vendorAccounts = 0
 	
-	csvcontact = open(contactfile, "w+")
+	csvcontact = open(contactfile, "wb+")
 	csvcontactwriter = csv.writer(csvcontact, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
 	csvcontactwriter.writerow(sf_contact_fields)
 	
-	csvbademailfile = open(badEmailContactFile, "w+")
+	csvbademailfile = open(badEmailContactFile, "wb+")
 	csvbademailwriter = csv.writer(csvbademailfile, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
 	csvbademailwriter.writerow(['FirstName', 'LastName', 'Company', 'Email'])
 	
@@ -194,13 +194,13 @@ with open(readCSVfile, 'r') as csvfile:
 	
 	print("Total Accounts: " + str(totalAccounts))
 
-	csvaccount = open(accountfile, "w+")
+	csvaccount = open(accountfile, "wb+")
 	csvaccountwriter = csv.writer(csvaccount, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
 	
 	csvaccountwriter.writerow(sf_account_fields)
 	
 	for accountName in sorted(accounts.keys()):
-#		print(accountName)
+		#print(accountName)
 		accountRowValues = []
 		for sf_account_field_name in sf_account_fields:
 			if "Account Category" in sf_account_field_name:

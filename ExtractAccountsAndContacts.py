@@ -189,7 +189,7 @@ with open(readCSVfile, 'r') as csvfile:
 	csvaccountwriter.writerow(sf_account_fields)
 	
 	for accountName in sorted(accounts.keys()):
-#		print(accountName)
+		print(accountName)
 		accountRowValues = []
 		for sf_account_field_name in sf_account_fields:
 			if "Account Category" in sf_account_field_name:
