@@ -45,7 +45,7 @@ else:
 	dest_dir = working_dir
 	
 now = datetime.now()
-timestamp = now.strftime("%yy%mm%dd-%H%M%S")
+timestamp = now.strftime("%y%m%d-%H%M%S")
 
 master_acct_file = timestamp + "_Master_Account.csv"
 master_acct_file = os.path.join(dest_dir, master_acct_file)
@@ -56,8 +56,8 @@ master_contact_file = os.path.join(dest_dir, master_contact_file)
 def checkForMasterFileWithFields(file_name, fields):
 	if not os.path.exists(file_name):
 		file = open(file_name, "wb+")
-		csv = csv.writer(file, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-		csv.writerow(fields)
+		fcsv = csv.writer(file, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+		fcsv.writerow(fields)
 		file.close()
 		
 def createNewAccountFileAtDestDir():
@@ -108,39 +108,44 @@ def writeMultipleRowValuesToMasterFile(rows):
 	mastercsv = open(master_acct_file, "ab")
 	mastercsv.seek(0,2)
 	mwriter = csv.writer(mastercsv, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
-	print "rows we think we have: " + str(len(rows))
 	mwriter.writerows(rows)
 	mastercsv.close()
 
 def processFileForMasterContactFile(file):
 	if not file:
-		return
+		return 0
 	if not os.path.exists(file):
 		print "ERROR: contact file '" + file + "' does not actually exist. It was just your imagination."
-		return
+		return 0
 	
+	row_count = 0
 	contactRowValuesToInsert = []
 	with open(file, "rb") as filecsv:
 		freader = csv.DictReader(filecsv, delimiter=',', quotechar='\"')
 		
-		row_count = 0
-		for frow in freader:
-			with open(master_contact_file, "rb") as mastercsv:
+		with open(master_contact_file, "ab") as mfile:
+			mwriter = csv.DictWriter(mfile, contact_fields, delimiter=',', quotechar='\"', quoting=csv.QUOTE_MINIMAL)
+			for frow in freader:
+				mwriter.writerow(frow)
+				row_count = row_count + 1;
+			print "Wrote " + str(row_count) + " rows from '" + file + "'"
+	return row_count		
 			
 def processFileForMasterAccountFile(file):
 	if not file:
-		return
+		return 0
 	if not os.path.exists(file):
 		print "ERROR: account file '" + file + "' does not actually exist. It was just a dream."
-		return
+		return 0
 	print "Reading from: " + file
 	
 
 	accountRowValuesToInsert = []
+	row_count = 0
+
 	with open(file, "rb") as filecsv:
 		freader = csv.DictReader(filecsv, delimiter=',', quotechar='\"')
 	
-		row_count = 0
 		for frow in freader:
 			with open(master_acct_file, "rb") as mastercsv:
 				mreader = csv.DictReader(mastercsv, delimiter=',', quotechar='\"')
@@ -153,10 +158,10 @@ def processFileForMasterAccountFile(file):
 					accountRowValuesToInsert.append(accountRowValues)
 					row_count = row_count + 1
 			
-		print "rows we inserted: " + str(row_count)
+		print "Account rows inserted: " + str(row_count)
 		
 	writeMultipleRowValuesToMasterFile(accountRowValuesToInsert)
-	return	
+	return row_count;
 
 checkForMasterFileWithFields(master_contact_file, contact_fields)
 checkForMasterFileWithFields(master_acct_file, account_fields)
@@ -173,8 +178,16 @@ print "Contact Directory Matching: " + cont_dir_match + "\n"
 print "Contact Files: " + "; ".join(contact_files)
 print "----------"
 
+total_count = 0
+print "Checking for Account Names and saving to: '" + master_acct_file + "\n********************"
 for file in account_files:
-	processFileForMasterAccountFile(file)
-	
+	total_count = total_count + processFileForMasterAccountFile(file)
+print ">>  Total Account: " + str(total_count)
+print "********************\nClosing master account file"
+
+total_count = 0
+print "Appending to master contact file: '" + master_contact_file + "'\n********************"
 for file in contact_files:
-	processFileForMasterContactFile(file)
+	total_count = total_count + processFileForMasterContactFile(file)
+print ">>Total Count: " + str(total_count)
+print "********************\nClosing master contact file"
